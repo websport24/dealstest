@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:15-alpine
+    container_name: clickcounter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clickcounter
+      POSTGRES_USER: clickcounter
+      POSTGRES_PASSWORD: clickcounter_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../app/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - clickcounter-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clickcounter -d clickcounter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Миграции базы данных
+  migrate:
+    image: migrate/migrate:v4.16.2
+    container_name: clickcounter-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../app/migrations:/migrations
+    networks:
+      - clickcounter-network
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://clickcounter:clickcounter_password@postgres:5432/clickcounter?sslmode=disable",
+      "up"
+    ]
+    restart: "no"
+
+  # Основное приложение
+  clickcounter:
+    build:
+      context: ../app
+      dockerfile: ../docker/Dockerfile
+    container_name: clickcounter-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      # Основные настройки
+      CLICKCOUNTER_ENVIRONMENT: production
+      CLICKCOUNTER_CONFIG_PATH: /app/configs/config.docker.yaml
+      
+      # База данных
+      CLICKCOUNTER_DATABASE_HOST: postgres
+      CLICKCOUNTER_DATABASE_PORT: 5432
+      CLICKCOUNTER_DATABASE_USER: clickcounter
+      CLICKCOUNTER_DATABASE_PASSWORD: clickcounter_password
+      CLICKCOUNTER_DATABASE_DBNAME: clickcounter
+      CLICKCOUNTER_DATABASE_SSLMODE: disable
+      
+      # Производительность
+      CLICKCOUNTER_DATABASE_MAX_OPEN_CONNS: 200
+      CLICKCOUNTER_DATABASE_MAX_IDLE_CONNS: 50
+      CLICKCOUNTER_DATABASE_CONN_MAX_LIFETIME: 1800
+      
+      # Кэш
+      CLICKCOUNTER_CACHE_TYPE: memory
+      
+      # Логирование
+      CLICKCOUNTER_LOGGER_LEVEL: info
+      CLICKCOUNTER_LOGGER_FORMAT: json
+      
+      # Сервер
+      CLICKCOUNTER_SERVER_PORT: 8080
+      CLICKCOUNTER_SERVER_READ_TIMEOUT: 15
+      CLICKCOUNTER_SERVER_WRITE_TIMEOUT: 15
+      CLICKCOUNTER_SERVER_IDLE_TIMEOUT: 60
+      
+      # Батчи
+      CLICKCOUNTER_CLICK_FLUSHER_INTERVAL: 2
+      CLICKCOUNTER_CLICK_FLUSHER_BATCH_SIZE: 2000
+      CLICKCOUNTER_STATS_AGGREGATOR_INTERVAL: 30
+    ports:
+      - "8080:8080"
+    networks:
+      - clickcounter-network
+    # Health check отключен для scratch образа
+    # healthcheck:
+    #   test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
+    volumes:
+      # Логи (опционально)
+      - ../logs:/app/logs
+
+
+
+# Volumes для персистентности данных
+volumes:
+  postgres_data:
+    driver: local
+
+# Сеть для изоляции сервисов
+networks:
+  clickcounter-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

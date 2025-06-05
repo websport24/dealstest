@@ -1,0 +1,60 @@
+# Конфигурация для Docker окружения
+# Для примера проекта это загружено в репозиторий
+environment: production
+
+# Настройки HTTP сервера
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 15
+  write_timeout: 15
+  idle_timeout: 60
+
+# Настройки базы данных PostgreSQL
+database:
+  host: postgres  # Имя сервиса в docker-compose
+  port: 5432
+  user: clickcounter
+  password: clickcounter_password
+  dbname: clickcounter
+  sslmode: disable
+  max_open_conns: 200
+  max_idle_conns: 50
+  conn_max_lifetime: 1800
+
+# Настройки кэширования
+cache:
+  type: "memory"
+  
+  memory:
+    cleanup_interval: 180
+    banner_ttl: 1800
+    stats_ttl: 300
+
+# Настройки логирования
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+# Настройки сброса кликов
+click_flusher:
+  interval: 2
+  batch_size: 2000
+
+# Настройки агрегации статистики
+stats_aggregator:
+  interval: 30
+
+# Rate limiting
+rate_limiting:
+  counter_rps: 5000
+  stats_rpm: 100
+  banners_rpm: 60
+
+# Настройки производительности
+performance:
+  enable_cache: true
+  cache_ttl: 300s
+  batch_size: 2000
+  batch_timeout: 1s 

@@ -1,0 +1,67 @@
+# Конфигурация для продакшена - оптимизирована под высокую нагрузку
+# Для примера проекта это загружено в репозиторий
+environment: production
+
+# Настройки HTTP сервера - оптимизированы для высокой нагрузки
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 15      # Уменьшено для высокой нагрузки
+  write_timeout: 15     # Уменьшено для высокой нагрузки
+  idle_timeout: 60      # Уменьшено для экономии ресурсов
+
+# Настройки базы данных PostgreSQL - увеличены для высокой нагрузки
+database:
+  host: localhost
+  port: 5432
+  user: clickcounter
+  password: ${CLICKCOUNTER_DATABASE_PASSWORD}
+  dbname: clickcounter
+  sslmode: require      # Безопасность в продакшене
+  max_open_conns: 200   # Увеличено для высокой нагрузки
+  max_idle_conns: 50    # Увеличено
+  conn_max_lifetime: 1800 # Уменьшено для ротации соединений
+
+# Настройки кэширования - оптимизированы для продакшена
+cache:
+  type: "memory"
+  
+  memory:
+    cleanup_interval: 180  # Чаще очищать (3 минуты)
+    banner_ttl: 1800      # Уменьшено для актуальности (30 минут)
+    stats_ttl: 300        # Уменьшено для актуальности (5 минут)
+
+# Настройки логирования - минимальные для продакшена
+logging:
+  level: "warn"         # Только предупреждения и ошибки
+  format: "json"
+  output: "stdout"
+
+# Настройки сброса кликов - оптимизированы для высокой нагрузки
+click_flusher:
+  interval: 2           # Чаще сбрасывать (2 секунды)
+  batch_size: 2000      # Увеличен размер батча
+
+# Настройки агрегации статистики
+stats_aggregator:
+  interval: 30          # Чаще агрегировать (30 секунд)
+
+# Rate limiting - настроено для высокой нагрузки
+rate_limiting:
+  counter_rps: 5000     # Максимум для требований
+  stats_rpm: 100
+  banners_rpm: 60
+
+# Настройки производительности
+performance:
+  enable_cache: true
+  cache_ttl: 300s
+  batch_size: 2000
+  batch_timeout: 1s
+
+# Переменные окружения для продакшена:
+# CLICKCOUNTER_ENVIRONMENT=production
+# CLICKCOUNTER_DATABASE_PASSWORD=secure_password
+# CLICKCOUNTER_DATABASE_HOST=db.example.com
+# CLICKCOUNTER_CACHE_TYPE=memory
+# CLICKCOUNTER_LOGGER_LEVEL=warn 

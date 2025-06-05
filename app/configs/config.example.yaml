@@ -1,0 +1,66 @@
+# Пример конфигурации для Click Counter сервиса
+environment: development
+
+# Настройки HTTP сервера
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 30
+  write_timeout: 30
+  idle_timeout: 120
+
+# Настройки базы данных PostgreSQL
+database:
+  host: localhost
+  port: 5432
+  user: clickcounter
+  password: password
+  dbname: clickcounter
+  sslmode: disable
+  max_open_conns: 100
+  max_idle_conns: 10
+  conn_max_lifetime: 3600
+
+# Настройки кэширования
+cache:
+  type: "memory"
+  
+  # Настройки кэша в памяти
+  memory:
+    cleanup_interval: 300  # Интервал очистки истекших элементов (секунды)
+    banner_ttl: 3600      # TTL для кэша баннеров (секунды) - 1 час
+    stats_ttl: 900        # TTL для кэша статистики (секунды) - 15 минут
+
+# Настройки логирования
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+# Настройки сброса кликов в БД
+click_flusher:
+  interval: 5      # Интервал сброса (секунды)
+  batch_size: 1000 # Размер батча
+
+# Настройки агрегации статистики
+stats_aggregator:
+  interval: 60     # Интервал агрегации (секунды)
+
+# Переменные окружения (альтернативный способ настройки):
+# CLICKCOUNTER_ENVIRONMENT=production
+# CLICKCOUNTER_SERVER_PORT=8080
+# CLICKCOUNTER_DATABASE_HOST=localhost
+# CLICKCOUNTER_DATABASE_PASSWORD=secret
+# CLICKCOUNTER_CACHE_MEMORY_BANNER_TTL=3600
+# CLICKCOUNTER_LOGGER_LEVEL=info
+
+rate_limiting:
+  counter_rps: 5000
+  stats_rpm: 100
+  banners_rpm: 60
+
+performance:
+  enable_cache: true
+  cache_ttl: 300s
+  batch_size: 1000
+  batch_timeout: 1s 

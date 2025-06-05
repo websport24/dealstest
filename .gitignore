@@ -1,0 +1,3 @@
+.cursor/rules/usecontextmd.mdc
+docker/loadtest/basic_load.exe
+docker/loadtest/loadtest_results.json
